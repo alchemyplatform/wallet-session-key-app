@@ -5,7 +5,9 @@ interface SessionResult {
   sessionId: string;
   signatureRequest: {
     type: string;
-    data: any;
+    data: {
+      raw: string;
+    };
   };
   sessionKey: SessionKey; // Store the generated session key
 }

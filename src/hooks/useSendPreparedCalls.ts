@@ -4,7 +4,19 @@ interface SendPreparedCallsParams {
   sessionId: string;
   signature: string;
   userOpSignature: string;
-  userOpRequest: any;
+  userOpRequest: {
+    sender: string;
+    nonce: string;
+    initCode: string;
+    callData: string;
+    callGasLimit: string;
+    verificationGasLimit: string;
+    preVerificationGas: string;
+    maxFeePerGas: string;
+    maxPriorityFeePerGas: string;
+    paymasterAndData: string;
+    signature: string;
+  };
   chainId: string;
 }
 

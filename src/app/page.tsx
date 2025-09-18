@@ -36,7 +36,7 @@ export default function Home() {
         <div className="w-full max-w-6xl">
           <div className="text-center mb-8">
             <p className="text-xl font-bold">Success!</p>
-            You're logged in as {user.email ?? "anon"}.
+            You&apos;re logged in as {user.email ?? "anon"}.
           </div>
           
           {addressError && (

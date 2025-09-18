@@ -13,7 +13,12 @@ export function useSessionAuthorization() {
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<SessionAuthorizationResult | null>(null);
 
-  const signSessionAuthorization = async (sessionId: string, signatureRequest: any) => {
+  const signSessionAuthorization = async (sessionId: string, signatureRequest: {
+    type: string;
+    data: {
+      raw: string;
+    };
+  }) => {
     setIsLoading(true);
     setError(null);
     
@@ -26,7 +31,10 @@ export function useSessionAuthorization() {
       console.log('Signature request:', signatureRequest);
 
       // Sign the signature request using the signer
-      const signature = await signer.signTypedData(signatureRequest.data);
+      // The signatureRequest.data.raw contains the hash to sign
+      const signature = await signer.signMessage({
+        raw: signatureRequest.data.raw as `0x${string}`,
+      });
       
       console.log('Signature created:', signature);
 

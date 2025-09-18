@@ -29,6 +29,7 @@ export async function POST(request: NextRequest) {
       params: [
         {
           type: 'user-operation-v070',
+          chainId: chainId,
           data: userOpRequest,
           capabilities: {
             permissions: {
@@ -36,7 +37,8 @@ export async function POST(request: NextRequest) {
             }
           },
           signature: {
-            signature: userOpSignature
+            type: 'secp256k1',
+            data: userOpSignature
           }
         }
       ]
