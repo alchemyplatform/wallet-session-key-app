@@ -39,6 +39,22 @@ export default function Home() {
             You&apos;re logged in as {user.email ?? "anon"}.
           </div>
           
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-8">
+            <div className="flex items-center gap-2 mb-2">
+              <svg className="w-5 h-5 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+              </svg>
+              <h2 className="text-lg font-semibold text-blue-800">Alchemy Smart Wallet Session Key Demo</h2>
+            </div>
+            <p className="text-sm text-blue-700 mb-3">
+              This demo shows how to implement session keys with Alchemy Smart Wallets. 
+              Each step demonstrates a different part of the session key workflow.
+            </p>
+            <div className="text-xs text-blue-600">
+              <strong>Flow:</strong> Get Address → Create Smart Account → Create Session → Sign Authorization → Prepare Calls → Sign & Send
+            </div>
+          </div>
+          
           {addressError && (
             <p className="text-red-500 text-sm text-center mb-4">Address Error: {addressError}</p>
           )}
@@ -46,7 +62,21 @@ export default function Home() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {/* Step 1 */}
             <div className="bg-gray-50 p-4 rounded-lg">
-              <h3 className="font-semibold mb-3 text-lg">Step 1: Get Alchemy Signer Address</h3>
+              <div className="flex items-center gap-2 mb-3">
+                <h3 className="font-semibold text-lg">Step 1: Get Alchemy Signer Address</h3>
+                <div className="relative inline-block group">
+                  <svg className="w-4 h-4 text-gray-500 cursor-help hover:text-gray-700 transition-colors" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-3a1 1 0 00-.867.5 1 1 0 11-1.731-1A3 3 0 0113 8a3.001 3.001 0 01-2 2.83V11a1 1 0 11-2 0v-1a1 1 0 011-1 1 1 0 100-2zm0 8a1 1 0 100-2 1 1 0 000 2z" clipRule="evenodd" />
+                  </svg>
+                  <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-800 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 w-64 z-10 pointer-events-none">
+                    <div className="font-semibold mb-1">Account Kit Integration</div>
+                    <div className="mb-1">Uses: <code className="bg-gray-700 px-1 rounded">useSigner().getAddress()</code></div>
+                    <div className="mb-1">Process: Direct Account Kit call</div>
+                    <div className="text-gray-300">No API route needed - uses Account Kit directly</div>
+                    <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-800"></div>
+                  </div>
+                </div>
+              </div>
               <button
                 className="akui-btn akui-btn-primary w-full"
                 onClick={async () => {
@@ -66,7 +96,26 @@ export default function Home() {
             
             {/* Step 2 */}
             <div className="bg-gray-50 p-4 rounded-lg">
-              <h3 className="font-semibold mb-3 text-lg">Step 2: Request Smart Account</h3>
+              <div className="flex items-center gap-2 mb-3">
+                <h3 className="font-semibold text-lg">Step 2: Request Smart Account</h3>
+                <div className="relative inline-block group">
+                  <svg className="w-4 h-4 text-gray-500 cursor-help hover:text-gray-700 transition-colors" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-3a1 1 0 00-.867.5 1 1 0 11-1.731-1A3 3 0 0113 8a3.001 3.001 0 01-2 2.83V11a1 1 0 11-2 0v-1a1 1 0 011-1 1 1 0 100-2zm0 8a1 1 0 100-2 1 1 0 000 2z" clipRule="evenodd" />
+                  </svg>
+                  <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-800 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 w-80 z-10 pointer-events-none">
+                    <div className="font-semibold mb-1">Alchemy Smart Wallet API</div>
+                    <div className="mb-1">Endpoint: <code className="bg-gray-700 px-1 rounded">wallet_requestAccount</code></div>
+                    <div className="mb-1">API Route: <code className="bg-gray-700 px-1 rounded">/api/wallet-request-account</code></div>
+                    <div className="mb-1">Process: Creates smart account for the signer</div>
+                    <div className="mb-2">
+                      <a href="https://docs.alchemy.com/reference/wallet-requestaccount" target="_blank" rel="noopener noreferrer" className="text-blue-300 hover:text-blue-200 underline">
+                        📖 Alchemy Documentation
+                      </a>
+                    </div>
+                    <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-800"></div>
+                  </div>
+                </div>
+              </div>
               <button
                 className="akui-btn akui-btn-primary w-full"
                 onClick={async () => {
@@ -115,7 +164,26 @@ export default function Home() {
             
             {/* Step 3 */}
             <div className="bg-gray-50 p-4 rounded-lg">
-              <h3 className="font-semibold mb-3 text-lg">Step 3: Create Session</h3>
+              <div className="flex items-center gap-2 mb-3">
+                <h3 className="font-semibold text-lg">Step 3: Create Session</h3>
+                <div className="relative inline-block group">
+                  <svg className="w-4 h-4 text-gray-500 cursor-help hover:text-gray-700 transition-colors" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-3a1 1 0 00-.867.5 1 1 0 11-1.731-1A3 3 0 0113 8a3.001 3.001 0 01-2 2.83V11a1 1 0 11-2 0v-1a1 1 0 011-1 1 1 0 100-2zm0 8a1 1 0 100-2 1 1 0 000 2z" clipRule="evenodd" />
+                  </svg>
+                  <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-800 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 w-80 z-10 pointer-events-none">
+                    <div className="font-semibold mb-1">Alchemy Smart Wallet API</div>
+                    <div className="mb-1">Endpoint: <code className="bg-gray-700 px-1 rounded">wallet_createSession</code></div>
+                    <div className="mb-1">API Route: <code className="bg-gray-700 px-1 rounded">/api/wallet-create-session</code></div>
+                    <div className="mb-1">Process: Creates session key & EIP-712 signature request</div>
+                    <div className="mb-2">
+                      <a href="https://docs.alchemy.com/reference/wallet-createsession" target="_blank" rel="noopener noreferrer" className="text-blue-300 hover:text-blue-200 underline">
+                        📖 Alchemy Documentation
+                      </a>
+                    </div>
+                    <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-800"></div>
+                  </div>
+                </div>
+              </div>
               <button
                 className="akui-btn akui-btn-primary w-full"
                 onClick={async () => {
@@ -174,7 +242,22 @@ export default function Home() {
             
             {/* Step 4 */}
             <div className="bg-gray-50 p-4 rounded-lg">
-              <h3 className="font-semibold mb-3 text-lg">Step 4: Sign Session Authorization</h3>
+              <div className="flex items-center gap-2 mb-3">
+                <h3 className="font-semibold text-lg">Step 4: Sign Session Authorization</h3>
+                <div className="relative inline-block group">
+                  <svg className="w-4 h-4 text-gray-500 cursor-help hover:text-gray-700 transition-colors" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-3a1 1 0 00-.867.5 1 1 0 11-1.731-1A3 3 0 0113 8a3.001 3.001 0 01-2 2.83V11a1 1 0 11-2 0v-1a1 1 0 011-1 1 1 0 100-2zm0 8a1 1 0 100-2 1 1 0 000 2z" clipRule="evenodd" />
+                  </svg>
+                  <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-800 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 w-80 z-10 pointer-events-none">
+                    <div className="font-semibold mb-1">Account Kit Integration</div>
+                    <div className="mb-1">Uses: <code className="bg-gray-700 px-1 rounded">useSigner().signTypedData()</code></div>
+                    <div className="mb-1">Process: Signs EIP-712 typed data with user's wallet</div>
+                    <div className="mb-1">Creates: Authorization context (0x00 + sessionId + signature)</div>
+                    <div className="text-gray-300">No API route needed - uses Account Kit directly</div>
+                    <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-800"></div>
+                  </div>
+                </div>
+              </div>
               <button
                 className="akui-btn akui-btn-primary w-full"
                 onClick={async () => {
@@ -238,7 +321,26 @@ export default function Home() {
             
             {/* Step 5 */}
             <div className="bg-gray-50 p-4 rounded-lg">
-              <h3 className="font-semibold mb-3 text-lg">Step 5: Prepare Background Tasks</h3>
+              <div className="flex items-center gap-2 mb-3">
+                <h3 className="font-semibold text-lg">Step 5: Prepare Background Tasks</h3>
+                <div className="relative inline-block group">
+                  <svg className="w-4 h-4 text-gray-500 cursor-help hover:text-gray-700 transition-colors" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-3a1 1 0 00-.867.5 1 1 0 11-1.731-1A3 3 0 0113 8a3.001 3.001 0 01-2 2.83V11a1 1 0 11-2 0v-1a1 1 0 011-1 1 1 0 100-2zm0 8a1 1 0 100-2 1 1 0 000 2z" clipRule="evenodd" />
+                  </svg>
+                  <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-800 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 w-80 z-10 pointer-events-none">
+                    <div className="font-semibold mb-1">Alchemy Smart Wallet API</div>
+                    <div className="mb-1">Endpoint: <code className="bg-gray-700 px-1 rounded">wallet_prepareCalls</code></div>
+                    <div className="mb-1">API Route: <code className="bg-gray-700 px-1 rounded">/api/wallet-prepare-calls</code></div>
+                    <div className="mb-1">Process: Prepares UserOp for session key signing</div>
+                    <div className="mb-2">
+                      <a href="https://docs.alchemy.com/reference/wallet-preparecalls" target="_blank" rel="noopener noreferrer" className="text-blue-300 hover:text-blue-200 underline">
+                        📖 Alchemy Documentation
+                      </a>
+                    </div>
+                    <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-800"></div>
+                  </div>
+                </div>
+              </div>
               <div className="space-y-2 mb-3">
                 <button
                   className="akui-btn akui-btn-primary w-full text-sm"
@@ -366,7 +468,26 @@ export default function Home() {
             
             {/* Step 6 */}
             <div className="bg-gray-50 p-4 rounded-lg">
-              <h3 className="font-semibold mb-3 text-lg">Step 6: Sign & Send Transaction</h3>
+              <div className="flex items-center gap-2 mb-3">
+                <h3 className="font-semibold text-lg">Step 6: Sign & Send Transaction</h3>
+                <div className="relative inline-block group">
+                  <svg className="w-4 h-4 text-gray-500 cursor-help hover:text-gray-700 transition-colors" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-3a1 1 0 00-.867.5 1 1 0 11-1.731-1A3 3 0 0113 8a3.001 3.001 0 01-2 2.83V11a1 1 0 11-2 0v-1a1 1 0 011-1 1 1 0 100-2zm0 8a1 1 0 100-2 1 1 0 000 2z" clipRule="evenodd" />
+                  </svg>
+                  <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-800 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 w-80 z-10 pointer-events-none">
+                    <div className="font-semibold mb-1">Two-Step Process:</div>
+                    <div className="mb-1">1. <code className="bg-gray-700 px-1 rounded">viem.signMessage()</code> - Sign with session key</div>
+                    <div className="mb-1">2. <code className="bg-gray-700 px-1 rounded">wallet_sendPreparedCalls</code> - Submit transaction</div>
+                    <div className="mb-1">API Route: <code className="bg-gray-700 px-1 rounded">/api/wallet-send-prepared-calls</code></div>
+                    <div className="mb-2">
+                      <a href="https://docs.alchemy.com/reference/wallet-sendpreparedcalls" target="_blank" rel="noopener noreferrer" className="text-blue-300 hover:text-blue-200 underline">
+                        📖 Alchemy Documentation
+                      </a>
+                    </div>
+                    <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-800"></div>
+                  </div>
+                </div>
+              </div>
               <button
                 className="akui-btn akui-btn-primary w-full"
                 onClick={async () => {
@@ -414,25 +535,71 @@ export default function Home() {
               )}
               
               {sendCallsError && (
-                <p className="text-red-500 text-sm mt-2">Send Calls Error: {sendCallsError}</p>
+                <div className="bg-red-50 border border-red-200 rounded-lg p-3 mt-3">
+                  <div className="flex items-start gap-2">
+                    <svg className="w-5 h-5 text-red-500 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                    </svg>
+                    <div>
+                      <p className="text-red-800 font-semibold text-sm">Transaction Failed</p>
+                      <p className="text-red-700 text-sm mt-1">{sendCallsError}</p>
+                      {sendCallsError.includes('fund the smart account') && (
+                        <div className="mt-2 p-2 bg-red-100 rounded border border-red-200">
+                          <p className="text-red-800 text-xs font-medium">💡 How to fix:</p>
+                          <ol className="text-red-700 text-xs mt-1 ml-4 list-decimal">
+                            <li>Copy the smart account address from Step 2</li>
+                            <li>Send Sepolia ETH to that address using a faucet or exchange</li>
+                            <li>You can use <a href="https://sepoliafaucet.com/" target="_blank" rel="noopener noreferrer" className="underline hover:text-red-900">Sepolia Faucet</a> to get test ETH</li>
+                            <li>Try Step 6 again once the account has ETH</li>
+                          </ol>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
               )}
               
               {sendCallsResult && (
                 <div className="bg-emerald-100 p-3 rounded mt-3">
                   <p className="text-emerald-800 font-semibold text-base">Transaction Sent!</p>
                   <div className="mt-2">
-                    <p className="text-sm"><strong>Call IDs:</strong></p>
-                    {sendCallsResult.map((callId: string, index: number) => (
-                      <div key={index} className="flex items-center gap-2 mt-1">
-                        <p className="text-sm">{callId.slice(0, 10)}...{callId.slice(-8)}</p>
-                        <button 
-                          onClick={() => navigator.clipboard.writeText(callId)}
-                          className="text-xs bg-emerald-200 hover:bg-emerald-300 px-2 py-1 rounded"
-                        >
-                          Copy
-                        </button>
+                    {Array.isArray(sendCallsResult) ? (
+                      sendCallsResult.map((txHash: string, index: number) => (
+                        <div key={index} className="bg-emerald-50 p-2 rounded mb-2">
+                          <div className="flex items-center gap-2">
+                            <p className="text-sm font-mono text-emerald-800">
+                              {txHash.slice(0, 10)}...{txHash.slice(-8)}
+                            </p>
+                            <button 
+                              onClick={() => navigator.clipboard.writeText(txHash)}
+                              className="text-xs bg-emerald-200 hover:bg-emerald-300 px-2 py-1 rounded transition-colors"
+                              title="Copy full transaction hash"
+                            >
+                              Copy Hash
+                            </button>
+                          </div>
+                          <div className="mt-1">
+                            <p className="text-xs text-emerald-700 font-mono break-all">
+                              Full Hash: {txHash}
+                            </p>
+                          </div>
+                          <div className="mt-1">
+                            <a 
+                              href={`https://sepolia.etherscan.io/tx/${txHash}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-xs bg-blue-100 hover:bg-blue-200 text-blue-800 px-2 py-1 rounded transition-colors"
+                            >
+                              View on Etherscan
+                            </a>
+                          </div>
+                        </div>
+                      ))
+                    ) : (
+                      <div className="bg-emerald-50 p-2 rounded">
+                        <p className="text-sm text-gray-600">Result: {JSON.stringify(sendCallsResult)}</p>
                       </div>
-                    ))}
+                    )}
                   </div>
                 </div>
               )}

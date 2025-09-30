@@ -63,17 +63,25 @@ export function useSession() {
       const data = await response.json();
       
       if (response.ok) {
+        // Check if the response has the expected structure
+        const sessionData = data.result || data;
+        
+        // Use the signatureRequest directly from the API response
+        // The Alchemy API returns the correct structure with type, data, and rawPayload
+        const signatureRequest = sessionData.signatureRequest;
+        
+        if (!signatureRequest) {
+          throw new Error('No signatureRequest found in session creation response');
+        }
+        
         const sessionResult = {
-          sessionId: data.result?.sessionId,
-          signatureRequest: data.result?.signatureRequest,
+          sessionId: sessionData.sessionId,
+          signatureRequest,
           sessionKey, // Include the session key in the result
         };
         
         setResult(sessionResult);
-        console.log('Session created successfully:', data);
-        console.log('Session ID:', sessionResult.sessionId);
-        console.log('Signature Request:', sessionResult.signatureRequest);
-        console.log('Session Key:', sessionKey.address);
+        console.log('Session created successfully:', sessionResult);
         
         return sessionResult;
       } else {
