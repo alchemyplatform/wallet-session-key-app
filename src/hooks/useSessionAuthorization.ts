@@ -61,6 +61,9 @@ export function useSessionAuthorization() {
       if (signatureRequest.type === 'eth_signTypedData_v4') {
         // This is EIP-712 typed data signing
         // For EIP-712, we need to sign the typed data structure
+        if (!signatureRequest.data) {
+          throw new Error('EIP-712 typed data is missing from signature request');
+        }
         signature = await signer.signTypedData(signatureRequest.data);
       } else if (signatureRequest.data?.raw) {
         // This is simple message signing
