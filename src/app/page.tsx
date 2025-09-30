@@ -421,18 +421,43 @@ export default function Home() {
                 <div className="bg-emerald-100 p-3 rounded mt-3">
                   <p className="text-emerald-800 font-semibold text-base">Transaction Sent!</p>
                   <div className="mt-2">
-                    <p className="text-sm"><strong>Call IDs:</strong></p>
-                    {sendCallsResult.map((callId: string, index: number) => (
-                      <div key={index} className="flex items-center gap-2 mt-1">
-                        <p className="text-sm">{callId.slice(0, 10)}...{callId.slice(-8)}</p>
-                        <button 
-                          onClick={() => navigator.clipboard.writeText(callId)}
-                          className="text-xs bg-emerald-200 hover:bg-emerald-300 px-2 py-1 rounded"
-                        >
-                          Copy
-                        </button>
+                    {Array.isArray(sendCallsResult) ? (
+                      sendCallsResult.map((txHash: string, index: number) => (
+                        <div key={index} className="bg-emerald-50 p-2 rounded mb-2">
+                          <div className="flex items-center gap-2">
+                            <p className="text-sm font-mono text-emerald-800">
+                              {txHash.slice(0, 10)}...{txHash.slice(-8)}
+                            </p>
+                            <button 
+                              onClick={() => navigator.clipboard.writeText(txHash)}
+                              className="text-xs bg-emerald-200 hover:bg-emerald-300 px-2 py-1 rounded transition-colors"
+                              title="Copy full transaction hash"
+                            >
+                              Copy Hash
+                            </button>
+                          </div>
+                          <div className="mt-1">
+                            <p className="text-xs text-emerald-700 font-mono break-all">
+                              Full Hash: {txHash}
+                            </p>
+                          </div>
+                          <div className="mt-1">
+                            <a 
+                              href={`https://sepolia.etherscan.io/tx/${txHash}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-xs bg-blue-100 hover:bg-blue-200 text-blue-800 px-2 py-1 rounded transition-colors"
+                            >
+                              View on Etherscan
+                            </a>
+                          </div>
+                        </div>
+                      ))
+                    ) : (
+                      <div className="bg-emerald-50 p-2 rounded">
+                        <p className="text-sm text-gray-600">Result: {JSON.stringify(sendCallsResult)}</p>
                       </div>
-                    ))}
+                    )}
                   </div>
                 </div>
               )}

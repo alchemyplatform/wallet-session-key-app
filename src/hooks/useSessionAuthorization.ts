@@ -28,13 +28,39 @@ export function useSessionAuthorization() {
       }
 
       console.log('Signing session authorization for session:', sessionId);
-      console.log('Signature request:', signatureRequest);
+      console.log('Signature request type:', signatureRequest.type);
+
+      // Validate the signature request data before signing
+      if (!signatureRequest) {
+        throw new Error('signatureRequest is undefined or null');
+      }
+
+      // Check if we have the required data for signing
+      const hasTypedData = signatureRequest.type === 'eth_signTypedData_v4' && signatureRequest.data;
+      const hasSimpleMessage = signatureRequest.data?.raw && typeof signatureRequest.data.raw === 'string';
+      const hasRawPayload = signatureRequest.rawPayload && typeof signatureRequest.rawPayload === 'string';
+
+      if (!hasTypedData && !hasSimpleMessage && !hasRawPayload) {
+        throw new Error('No valid signing data found in signatureRequest');
+      }
 
       // Sign the signature request using the signer
-      // The signatureRequest.data.raw contains the hash to sign
-      const signature = await signer.signMessage({
-        raw: signatureRequest.data.raw as `0x${string}`,
-      });
+      // Check if this is EIP-712 typed data signing or simple message signing
+      let signature: string;
+      
+      if (signatureRequest.type === 'eth_signTypedData_v4') {
+        // This is EIP-712 typed data signing
+        // For EIP-712, we need to sign the typed data structure
+        signature = await signer.signTypedData(signatureRequest.data);
+      } else if (signatureRequest.data?.raw) {
+        // This is simple message signing
+        signature = await signer.signMessage(signatureRequest.data.raw);
+      } else if (signatureRequest.rawPayload) {
+        // Fallback: use rawPayload as the message to sign
+        signature = await signer.signMessage(signatureRequest.rawPayload);
+      } else {
+        throw new Error('No valid signing data found in signatureRequest');
+      }
       
       console.log('Signature created:', signature);
 
