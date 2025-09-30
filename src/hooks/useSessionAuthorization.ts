@@ -73,7 +73,8 @@ export function useSessionAuthorization() {
           message: signatureRequest.data.message || {}
         };
         
-        signature = await signer.signTypedData(typedData);
+        // Type assertion to handle the complex EIP-712 type requirements
+        signature = await signer.signTypedData(typedData as any);
       } else if (signatureRequest.data?.raw) {
         // This is simple message signing
         signature = await signer.signMessage(signatureRequest.data.raw);
