@@ -17,10 +17,15 @@ export function useSessionAuthorization() {
     type: string;
     data?: {
       raw?: string;
-      domain?: any;
-      types?: any;
+      domain?: {
+        chainId?: number;
+        verifyingContract?: string;
+        name?: string;
+        version?: string;
+      };
+      types?: Record<string, Array<{ name: string; type: string }>>;
       primaryType?: string;
-      message?: any;
+      message?: Record<string, unknown>;
     };
     rawPayload?: string;
   }) => {
