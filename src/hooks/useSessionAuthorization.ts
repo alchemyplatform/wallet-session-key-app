@@ -74,6 +74,7 @@ export function useSessionAuthorization() {
         };
         
         // Type assertion to handle the complex EIP-712 type requirements
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         signature = await signer.signTypedData(typedData as any);
       } else if (signatureRequest.data?.raw) {
         // This is simple message signing
