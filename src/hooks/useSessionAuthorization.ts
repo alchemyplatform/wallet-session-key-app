@@ -15,9 +15,14 @@ export function useSessionAuthorization() {
 
   const signSessionAuthorization = async (sessionId: string, signatureRequest: {
     type: string;
-    data: {
-      raw: string;
+    data?: {
+      raw?: string;
+      domain?: any;
+      types?: any;
+      primaryType?: string;
+      message?: any;
     };
+    rawPayload?: string;
   }) => {
     setIsLoading(true);
     setError(null);
