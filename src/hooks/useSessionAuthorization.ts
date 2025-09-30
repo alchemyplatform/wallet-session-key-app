@@ -64,7 +64,16 @@ export function useSessionAuthorization() {
         if (!signatureRequest.data) {
           throw new Error('EIP-712 typed data is missing from signature request');
         }
-        signature = await signer.signTypedData(signatureRequest.data);
+        
+        // Ensure we have the required EIP-712 structure
+        const typedData = {
+          domain: signatureRequest.data.domain || {},
+          types: signatureRequest.data.types || {},
+          primaryType: signatureRequest.data.primaryType || '',
+          message: signatureRequest.data.message || {}
+        };
+        
+        signature = await signer.signTypedData(typedData);
       } else if (signatureRequest.data?.raw) {
         // This is simple message signing
         signature = await signer.signMessage(signatureRequest.data.raw);
