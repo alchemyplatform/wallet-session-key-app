@@ -136,7 +136,15 @@ export function useSendPreparedCalls() {
       setResult(callIds);
       return callIds;
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to send prepared calls';
+      let errorMessage = err instanceof Error ? err.message : 'Failed to send prepared calls';
+      
+      // Check for insufficient balance error and provide a clearer message
+      if (errorMessage.includes('precheck failed') && errorMessage.includes('sender balance and deposit together is 0')) {
+        errorMessage = 'You must fund the smart account retrieved in Step 2 with Sepolia ETH! The account needs ETH to pay for transaction fees.';
+      } else if (errorMessage.includes('insufficient funds') || errorMessage.includes('balance')) {
+        errorMessage = 'Insufficient balance: Please fund your smart account with Sepolia ETH to cover transaction fees.';
+      }
+      
       setError(errorMessage);
       throw err;
     } finally {
