@@ -85,7 +85,7 @@ export default function Home() {
                     const address = await getSignerAddress();
                     console.log('Signer address:', address);
                   } catch (error) {
-                    // Error is handled by the hook
+                    console.error('Error getting signer address:', error);
                   }
                 }}
                 disabled={isGettingAddress}
@@ -125,7 +125,7 @@ export default function Home() {
                     // Hook: useSmartAccount -> /api/wallet-request-account
                     await requestAccount(signerAddress);
                   } catch (error) {
-                    // Errors are handled by the hooks
+                    console.error('Error requesting smart account:', error);
                   }
                 }}
                 disabled={isRequestingAccount || isGettingAddress}
@@ -202,7 +202,7 @@ export default function Home() {
                       // sessionKeyAddress will be auto-generated
                     });
                   } catch (error) {
-                    // Errors are handled by the hooks
+                    console.error('Error creating session:', error);
                   }
                 }}
                 disabled={isCreatingSession || !smartAccountResult}
@@ -251,7 +251,7 @@ export default function Home() {
                   <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-800 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 w-80 z-10 pointer-events-none">
                     <div className="font-semibold mb-1">Account Kit Integration</div>
                     <div className="mb-1">Uses: <code className="bg-gray-700 px-1 rounded">useSigner().signTypedData()</code></div>
-                    <div className="mb-1">Process: Signs EIP-712 typed data with user's wallet</div>
+                    <div className="mb-1">Process: Signs EIP-712 typed data with user&apos;s wallet</div>
                     <div className="mb-1">Creates: Authorization context (0x00 + sessionId + signature)</div>
                     <div className="text-gray-300">No API route needed - uses Account Kit directly</div>
                     <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-800"></div>
@@ -273,7 +273,7 @@ export default function Home() {
                       sessionResult.signatureRequest
                     );
                   } catch (error) {
-                    // Errors are handled by the hooks
+                    console.error('Error signing session authorization:', error);
                   }
                 }}
                 disabled={isSigningAuthorization || !sessionResult}
