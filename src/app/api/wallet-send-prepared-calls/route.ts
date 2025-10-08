@@ -12,6 +12,8 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    console.log('ALCHEMY_API_KEY', process.env.NEXT_PUBLIC_ALCHEMY_API_KEY);
+
     if (!process.env.NEXT_PUBLIC_ALCHEMY_API_KEY) {
       return NextResponse.json(
         { error: 'Alchemy API key not configured' },

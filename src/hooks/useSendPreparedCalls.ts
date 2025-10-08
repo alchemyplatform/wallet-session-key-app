@@ -76,19 +76,26 @@ export function useSendPreparedCalls() {
         else if (callIds && typeof callIds === 'object') {
           console.log('callIds is an object, checking for transaction data...');
           
+          // First check for preparedCallIds array (the actual structure we're getting)
+          if (callIds.preparedCallIds && Array.isArray(callIds.preparedCallIds)) {
+            callIds = callIds.preparedCallIds;
+            console.log('Found preparedCallIds array:', callIds);
+          }
           // Check for common transaction hash field names
-          const possibleTxFields = ['hash', 'txHash', 'transactionHash', 'id', 'callId', 'result'];
-          for (const field of possibleTxFields) {
-            if (callIds[field]) {
-              console.log(`Found transaction field '${field}':`, callIds[field]);
-              if (typeof callIds[field] === 'string') {
-                callIds = [callIds[field]];
-                console.log('Extracted transaction hash:', callIds);
-                break;
-              } else if (Array.isArray(callIds[field])) {
-                callIds = callIds[field];
-                console.log('Extracted transaction array:', callIds);
-                break;
+          else {
+            const possibleTxFields = ['hash', 'txHash', 'transactionHash', 'id', 'callId', 'result'];
+            for (const field of possibleTxFields) {
+              if (callIds[field]) {
+                console.log(`Found transaction field '${field}':`, callIds[field]);
+                if (typeof callIds[field] === 'string') {
+                  callIds = [callIds[field]];
+                  console.log('Extracted transaction hash:', callIds);
+                  break;
+                } else if (Array.isArray(callIds[field])) {
+                  callIds = callIds[field];
+                  console.log('Extracted transaction array:', callIds);
+                  break;
+                }
               }
             }
           }

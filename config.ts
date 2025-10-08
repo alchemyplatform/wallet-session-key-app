@@ -12,6 +12,9 @@ export const config = createConfig(
     ssr: true,
     storage: cookieStorage,
     enablePopupOauth: true,
+    sessionConfig: {
+      expirationTimeMs: 24 * 60 * 60 * 1000, // 24 hours in milliseconds
+    },
     // For gas sponsorship
     // Learn more here: https://www.alchemy.com/docs/wallets/transactions/sponsor-gas/sponsor-gas-evm
     policyId: process.env.NEXT_PUBLIC_ALCHEMY_POLICY_ID,

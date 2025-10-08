@@ -17,6 +17,7 @@ interface CreateSessionParams {
   chainId: string;
   sessionKeyAddress?: string; // Make optional since we'll generate it
   expiry?: number; // Unix timestamp, defaults to 24 hours from now
+  permissionType?: 'root' | 'native-token-transfer' | 'erc20-token-transfer'; // Permission type for the session
 }
 
 export function useSession() {
@@ -24,7 +25,7 @@ export function useSession() {
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<SessionResult | null>(null);
 
-  const createSession = async ({ account, chainId, sessionKeyAddress, expiry }: CreateSessionParams) => {
+  const createSession = async ({ account, chainId, sessionKeyAddress, expiry, permissionType = 'root' }: CreateSessionParams) => {
     setIsLoading(true);
     setError(null);
     
@@ -57,20 +58,38 @@ export function useSession() {
           chainId,
           expiry: sessionExpiry,
           publicKey: sessionKey.address, // Use the generated session key address
+          permissionType, // Pass the selected permission type
         }),
       });
 
       const data = await response.json();
       
+      console.log('=== SESSION CREATION RESPONSE ===');
+      console.log('Response status:', response.status);
+      console.log('Response ok:', response.ok);
+      console.log('Full response data:', JSON.stringify(data, null, 2));
+      
       if (response.ok) {
         // Check if the response has the expected structure
         const sessionData = data.result || data;
+        
+        console.log('Session data:', JSON.stringify(sessionData, null, 2));
         
         // Use the signatureRequest directly from the API response
         // The Alchemy API returns the correct structure with type, data, and rawPayload
         const signatureRequest = sessionData.signatureRequest;
         
         if (!signatureRequest) {
+          console.error('No signatureRequest found in session creation response');
+          console.error('Available fields in sessionData:', Object.keys(sessionData));
+          console.error('Full sessionData structure:', JSON.stringify(sessionData, null, 2));
+          console.error('Permission type:', permissionType);
+          
+          // Check if the session creation actually failed
+          if (sessionData.error) {
+            throw new Error(`Session creation failed: ${sessionData.error.message || sessionData.error}`);
+          }
+          
           throw new Error('No signatureRequest found in session creation response');
         }
         
