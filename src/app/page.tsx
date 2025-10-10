@@ -30,7 +30,7 @@ export default function Home() {
   const { prepareCalls, isLoading: isPreparingCalls, error: prepareCallsError, result: prepareCallsResult } = usePrepareCalls();
   const { sendPreparedCalls, isLoading: isSendingCalls, error: sendCallsError, result: sendCallsResult } = useSendPreparedCalls();
   const { signWithSessionKey, isLoading: isSigningWithSessionKey, error: sessionKeySignError } = useSessionKeySigner();
-  const { getCallsStatus, isLoading: isCheckingStatus, error: statusError } = useGetCallsStatus();
+  const { getCallsStatus, error: statusError } = useGetCallsStatus();
 
   // Step completion tracking
   const [completedSteps, setCompletedSteps] = useState<Set<number>>(new Set());
@@ -76,7 +76,7 @@ export default function Home() {
         // Check if transaction is completed (status 200) and has receipts
         if (status.status === 200 && status.receipts && status.receipts.length > 0) {
           // Extract transaction hash from receipts
-          const receipt = status.receipts[0] as any;
+          const receipt = status.receipts[0] as { transactionHash?: string; hash?: string; id?: string };
           const txHash = receipt.transactionHash || receipt.hash || receipt.id;
           
           if (txHash) {
@@ -825,7 +825,7 @@ export default function Home() {
 
               {/* Features Preview */}
               <div className="text-left">
-                <h4 className="text-sm font-semibold text-gray-700 mb-3">What you'll learn:</h4>
+                <h4 className="text-sm font-semibold text-gray-700 mb-3">What you&apos;ll learn:</h4>
                 <ul className="text-sm text-gray-600 space-y-2">
                   <li className="flex items-center gap-2">
                     <svg className="w-4 h-4 text-green-500" fill="currentColor" viewBox="0 0 20 20">
