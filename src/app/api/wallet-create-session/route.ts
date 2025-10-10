@@ -31,7 +31,7 @@ export async function POST(request: NextRequest) {
       permissions = [{
         type: 'native-token-transfer',
         data: {
-          allowance: '0xde0b6b3a7640000' // 0.1 ETH in wei
+          allowance: '0x16345785D8A0000' // 0.1 ETH in wei
         }
       }];
     } else if (permissionType === 'erc20-token-transfer') {
