@@ -13,7 +13,7 @@ export async function POST(request: NextRequest) {
     }
 
 
-    if (!process.env.ALCHEMY_API_KEY) {
+    if (!process.env.NEXT_PUBLIC_ALCHEMY_API_KEY) {
       return NextResponse.json(
         { error: 'Alchemy API key not configured' },
         { status: 500 }
