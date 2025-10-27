@@ -47,19 +47,17 @@ export async function POST(request: NextRequest) {
         {
           type: 'contract-access',
           data: {
-            address: '0x5FF137D4b0FDCD49DcA30c7CF57E578a026d2789'
+            address: '0x4Ff840AC60adbdCa20e5640fC2124F5d639Ea501'
           }
         }
       ];
     } else if (permissionType === 'erc20-token-transfer') {
       // Use erc20-token-transfer for ERC20 transfers
-
-      // console.log('ERC20 token transfer permission typ!!!!e');
       permissions = [{
         type: 'erc20-token-transfer',
         data: {
-          allowance: '0x16345785d8a0000', // 0.1 token in wei
-          address: '0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238'
+          allowance: '0x186a0', // 0.1 USDC (100000 - since USDC has 6 decimals)
+          address: '0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238' // USDC contract address on Ethereum Sepolia
         }
       }];
     } else {
