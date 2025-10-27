@@ -1,16 +1,25 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { generateSessionKey } from '../../../utils/sessionKey';
 
 export async function POST(request: NextRequest) {
   try {
-    const { account, chainId, expiry, publicKey, permissionType = 'root' } = await request.json();
-    // this public key is the session key address
+    const { account, chainId, expiry, permissionType = 'root' } = await request.json();
 
-    if (!account || !chainId || !expiry || !publicKey) {
+    if (!account || !chainId || !expiry) {
       return NextResponse.json(
-        { error: 'account, chainId, expiry, and publicKey (session key address) are required' },
+        { error: 'account, chainId, and expiry are required' },
         { status: 400 }
       );
     }
+
+    // Generate session key on the backend
+    const sessionKey = generateSessionKey();
+    const publicKey = sessionKey.address;
+
+    console.log('Generated session key on backend:', {
+      address: publicKey,
+      privateKey: sessionKey.privateKey.slice(0, 10) + '...' // Don't log full private key
+    });
 
     const alchemyApiKey = process.env.NEXT_PUBLIC_ALCHEMY_API_KEY;
     if (!alchemyApiKey) {
@@ -28,14 +37,24 @@ export async function POST(request: NextRequest) {
       permissions = [{ type: permissionType }];
     } else if (permissionType === 'native-token-transfer') {
       // Use native-token-transfer for native token transfers
-      permissions = [{
-        type: 'native-token-transfer',
-        data: {
-          allowance: '0x16345785D8A0000' // 0.1 ETH in wei
+      permissions = [
+        {
+          type: 'native-token-transfer',
+          data: {
+            allowance: '0x16345785D8A0000' // 0.1 ETH in wei
+          }
+        },
+        {
+          type: 'contract-access',
+          data: {
+            address: '0x5FF137D4b0FDCD49DcA30c7CF57E578a026d2789'
+          }
         }
-      }];
+      ];
     } else if (permissionType === 'erc20-token-transfer') {
       // Use erc20-token-transfer for ERC20 transfers
+
+      // console.log('ERC20 token transfer permission typ!!!!e');
       permissions = [{
         type: 'erc20-token-transfer',
         data: {
@@ -47,7 +66,7 @@ export async function POST(request: NextRequest) {
       permissions = [{ type: 'root' }]; // fallback
     }
 
-    console.log('Permissions:', permissions);
+    // console.log('Permissions:', permissions);
 
     const requestBody = {
       jsonrpc: '2.0',
@@ -103,7 +122,16 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    return NextResponse.json(data);
+    // Add session key information to the response
+    const responseData = {
+      ...data,
+      sessionKey: {
+        privateKey: sessionKey.privateKey,
+        address: sessionKey.address,
+      }
+    };
+
+    return NextResponse.json(responseData);
   } catch (error) {
     console.error('Error creating session:', error);
     return NextResponse.json(

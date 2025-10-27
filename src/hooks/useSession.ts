@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { generateSessionKey, SessionKey } from '../utils/sessionKey';
+import { SessionKey } from '../utils/sessionKey';
 
 interface SessionResult {
   sessionId: string;
@@ -15,7 +15,6 @@ interface SessionResult {
 interface CreateSessionParams {
   account: string;
   chainId: string;
-  sessionKeyAddress?: string; // Make optional since we'll generate it
   expiry?: number; // Unix timestamp, defaults to 24 hours from now
   permissionType?: 'root' | 'native-token-transfer' | 'erc20-token-transfer'; // Permission type for the session
 }
@@ -25,27 +24,16 @@ export function useSession() {
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<SessionResult | null>(null);
 
-  const createSession = async ({ account, chainId, sessionKeyAddress, expiry, permissionType = 'root' }: CreateSessionParams) => {
+  const createSession = async ({ account, chainId, expiry, permissionType = 'root' }: CreateSessionParams) => {
     setIsLoading(true);
     setError(null);
     
     try {
-      // Generate a new session key if not provided
-      const sessionKey = sessionKeyAddress ? 
-        { privateKey: '0x' as `0x${string}`, address: sessionKeyAddress as `0x${string}` } : 
-        generateSessionKey();
-      
-      console.log('Generated session key:', {
-        address: sessionKey.address,
-        privateKey: sessionKey.privateKey.slice(0, 10) + '...' // Don't log full private key
-      });
-
       // Default to 24 hours from now if no expiry provided
       const sessionExpiry = expiry || Math.floor(Date.now() / 1000) + (24 * 60 * 60);
       
       console.log('Creating session for account:', account);
       console.log('Chain ID:', chainId);
-      console.log('Session Key Address:', sessionKey.address);
       console.log('Expiry:', new Date(sessionExpiry * 1000).toISOString());
       
       const response = await fetch('/api/wallet-create-session', {
@@ -57,7 +45,6 @@ export function useSession() {
           account,
           chainId,
           expiry: sessionExpiry,
-          publicKey: sessionKey.address, // Use the generated session key address
           permissionType, // Pass the selected permission type
         }),
       });
@@ -93,10 +80,16 @@ export function useSession() {
           throw new Error('No signatureRequest found in session creation response');
         }
         
+        // Get session key from backend response
+        const sessionKey = data.sessionKey;
+        if (!sessionKey) {
+          throw new Error('No session key returned from backend');
+        }
+        
         const sessionResult = {
           sessionId: sessionData.sessionId,
           signatureRequest,
-          sessionKey, // Include the session key in the result
+          sessionKey, // Use session key from backend
         };
         
         setResult(sessionResult);

@@ -11,6 +11,11 @@ const inter = Inter({ subsets: ["latin"] });
 export const metadata: Metadata = {
   title: "Account Kit Quickstart",
   description: "Account Kit Quickstart NextJS Template",
+  icons: {
+    icon: "/Logo.svg",
+    shortcut: "/Logo.svg",
+    apple: "/Logo.svg",
+  },
 };
 
 export default async function RootLayout({

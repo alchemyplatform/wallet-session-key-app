@@ -12,7 +12,8 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    if (!process.env.NEXT_PUBLIC_ALCHEMY_API_KEY) {
+
+    if (!process.env.ALCHEMY_API_KEY) {
       return NextResponse.json(
         { error: 'Alchemy API key not configured' },
         { status: 500 }
@@ -21,6 +22,7 @@ export async function POST(request: NextRequest) {
 
     // Concatenate the context: 0x00 + sessionId + signature
     const context = `0x00${sessionId.slice(2)}${signature.slice(2)}`;
+    
 
     const prepareCallsRequest = {
       id: 1,
@@ -31,6 +33,9 @@ export async function POST(request: NextRequest) {
           capabilities: {
             permissions: {
               context: context
+            },
+            paymasterService: {
+              policyId: process.env.NEXT_PUBLIC_ALCHEMY_POLICY_ID,
             }
           },
           calls: calls,
@@ -39,6 +44,8 @@ export async function POST(request: NextRequest) {
         }
       ]
     };
+
+    console.log('prepareCallsRequest', prepareCallsRequest);
 
     // Use the correct Alchemy Smart Wallet API endpoint
     const endpoint = `https://api.g.alchemy.com/v2/${process.env.NEXT_PUBLIC_ALCHEMY_API_KEY}`;

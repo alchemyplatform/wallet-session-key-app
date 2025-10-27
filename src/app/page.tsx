@@ -15,6 +15,7 @@ import { usePrepareCalls } from '../hooks/usePrepareCalls';
 import { useSendPreparedCalls } from '../hooks/useSendPreparedCalls';
 import { useSessionKeySigner } from '../hooks/useSessionKeySigner';
 import { useGetCallsStatus } from '../hooks/useGetCallsStatus';
+import { useEthBalance } from '../hooks/useEthBalance';
 
 export default function Home() {
   const user = useUser();
@@ -31,10 +32,14 @@ export default function Home() {
   const { sendPreparedCalls, isLoading: isSendingCalls, error: sendCallsError, result: sendCallsResult } = useSendPreparedCalls();
   const { signWithSessionKey, isLoading: isSigningWithSessionKey, error: sessionKeySignError } = useSessionKeySigner();
   const { getCallsStatus, error: statusError } = useGetCallsStatus();
+  const { balance: ethBalance, isLoading: isBalanceLoading, error: balanceError, refetch: refetchBalance } = useEthBalance(smartAccountResult?.accountAddress || null);
 
   // Step completion tracking
   const [completedSteps, setCompletedSteps] = useState<Set<number>>(new Set());
   const [copiedItems, setCopiedItems] = useState<Set<string>>(new Set());
+  
+  // Collapsible steps state - completed steps are collapsed by default
+  const [collapsedSteps, setCollapsedSteps] = useState<Set<number>>(new Set());
   
   // Transaction hash tracking
   const [transactionHash, setTransactionHash] = useState<string | null>(null);
@@ -42,6 +47,19 @@ export default function Home() {
   
   // Permission type selection for Step 3
   const [selectedPermissionType, setSelectedPermissionType] = useState<'root' | 'native-token-transfer' | 'erc20-token-transfer'>('root');
+  
+  // Session time selection for Step 3
+  const [selectedSessionTime, setSelectedSessionTime] = useState<'5min' | '1hour' | '1day'>('1hour');
+  
+  // Helper function to get session time in seconds
+  const getSessionTimeInSeconds = (time: string) => {
+    switch (time) {
+      case '5min': return 5 * 60; // 5 minutes
+      case '1hour': return 60 * 60; // 1 hour
+      case '1day': return 24 * 60 * 60; // 1 day
+      default: return 60 * 60; // default to 1 hour
+    }
+  };
   
   // Copy to clipboard with feedback
   const handleCopy = async (text: string, itemId: string) => {
@@ -130,6 +148,40 @@ export default function Home() {
   const isStepCompleted = (stepNumber: number) => {
     return completedSteps.has(stepNumber);
   };
+  
+  // Check if a step is collapsed
+  const isStepCollapsed = (stepNumber: number) => {
+    return collapsedSteps.has(stepNumber);
+  };
+  
+  // Toggle step collapse state
+  const toggleStepCollapse = (stepNumber: number) => {
+    setCollapsedSteps(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(stepNumber)) {
+        newSet.delete(stepNumber);
+      } else {
+        newSet.add(stepNumber);
+      }
+      return newSet;
+    });
+  };
+  
+  // Mark step as completed (without auto-collapsing)
+  const markStepCompleted = (stepNumber: number) => {
+    setCompletedSteps(prev => new Set([...prev, stepNumber]));
+  };
+  
+  // Collapse previous step when starting next step
+  const startNextStep = (stepNumber: number) => {
+    // Collapse the previous step (stepNumber - 1) if it exists and is completed
+    if (stepNumber > 1) {
+      const previousStep = stepNumber - 1;
+      if (completedSteps.has(previousStep)) {
+        setCollapsedSteps(prev => new Set([...prev, previousStep]));
+      }
+    }
+  };
 
   return (
     <div className="min-h-screen">
@@ -143,7 +195,27 @@ export default function Home() {
           <div className="w-64 bg-gray-50 border-r border-gray-200 p-6">
             <div className="sticky top-6">
               <div className="mb-6">
-                <h3 className="font-semibold text-gray-900 mb-3">Account</h3>
+                <div className="flex items-center justify-between mb-3">
+                  <h3 className="font-semibold text-gray-900">Account</h3>
+                  <div className="relative group">
+                    <button className="p-1 text-gray-400 hover:text-gray-600 transition-colors cursor-pointer">
+                      <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                        <path d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z" />
+                      </svg>
+                    </button>
+                    <div className="absolute right-0 top-8 bg-white border border-gray-200 rounded-lg shadow-lg py-1 z-10 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200">
+                      <button
+                        className="w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 text-left flex items-center gap-2 cursor-pointer"
+                        onClick={() => logout()}
+                      >
+                        <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M3 3a1 1 0 00-1 1v12a1 1 0 102 0V4a1 1 0 00-1-1zm10.293 9.293a1 1 0 001.414 1.414l3-3a1 1 0 000-1.414l-3-3a1 1 0 10-1.414 1.414L14.586 9H7a1 1 0 100 2h7.586l-1.293 1.293z" clipRule="evenodd" />
+                        </svg>
+                        Log out
+                      </button>
+                    </div>
+                  </div>
+                </div>
                 <p className="text-sm text-gray-600 mb-2">
                   Logged in as <span className="font-medium">{user.email ?? "anon"}</span>
                 </p>
@@ -161,40 +233,55 @@ export default function Home() {
                         {copiedItems.has('sidebar-smart-account') ? 'Copied!' : 'Copy'}
                       </button>
                     </div>
+                    
+                    {/* ETH Balance Display */}
+                    <div className="mt-3 pt-3 border-t border-blue-200">
+                      <div className="flex items-center justify-between">
+                        <p className="text-xs font-semibold text-blue-800">ETH Balance</p>
+                        <button 
+                          onClick={refetchBalance}
+                          className="text-xs bg-blue-200 hover:bg-blue-300 text-blue-800 px-2 py-1 rounded cursor-pointer transition-colors font-medium"
+                          disabled={isBalanceLoading}
+                        >
+                          {isBalanceLoading ? '...' : 'Refresh'}
+                        </button>
+                      </div>
+                      <div className="mt-1">
+                        {isBalanceLoading ? (
+                          <div className="flex items-center gap-2">
+                            <div className="animate-spin rounded-full h-3 w-3 border-b border-blue-600"></div>
+                            <p className="text-sm text-blue-700">Loading...</p>
+                          </div>
+                        ) : balanceError ? (
+                          <p className="text-sm text-red-600">Error loading balance</p>
+                        ) : ethBalance !== null ? (
+                          <p className="text-sm font-mono font-semibold text-blue-900">
+                            {ethBalance} ETH
+                          </p>
+                        ) : (
+                          <p className="text-sm text-blue-700">No balance data</p>
+                        )}
+                      </div>
+                    </div>
                   </div>
                 )}
               </div>
-              <button
-                className="akui-btn akui-btn-primary w-full"
-                onClick={() => logout()}
-              >
-                Log out
-              </button>
             </div>
           </div>
           
           {/* Main Content */}
           <div className="flex-1 p-8">
-            <div className="text-center mb-8">
-              <h1 className="text-3xl font-bold text-gray-900 mb-2">Alchemy Smart Wallets Session Key Demo</h1>
-              <p className="text-lg text-gray-600">Complete the steps below to learn how session keys work with Alchemy Smart Wallets</p>
+            <div className="text-left mb-12">
+              <div className="mb-6">
+                <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent mb-3">
+                  Alchemy Smart Wallets
+                </h1>
+                <h2 className="text-2xl font-semibold text-gray-800 mb-4">
+                  Session Key Demo
+                </h2>
+                <div className="w-24 h-1 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full"></div>
+              </div>
             </div>
-          
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-8">
-            <div className="flex items-center gap-2 mb-2">
-              <svg className="w-5 h-5 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
-              </svg>
-              <h2 className="text-lg font-semibold text-blue-800">How It Works</h2>
-            </div>
-            <p className="text-sm text-blue-700 mb-3">
-              This demo shows how to implement session keys with Alchemy Smart Wallets. 
-              Each step demonstrates a different part of the session key workflow.
-            </p>
-            <div className="text-xs text-blue-600">
-              <strong>Flow:</strong> Get Address → Create Smart Account → Create Session → Sign Authorization → Prepare Calls → Sign & Send
-            </div>
-          </div>
           
           {addressError && (
             <p className="text-red-500 text-sm text-center mb-4">Address Error: {addressError}</p>
@@ -204,117 +291,177 @@ export default function Home() {
             {/* Step 1 */}
             <div className={`p-4 rounded-lg ${isStepCompleted(1) ? 'bg-gray-100 opacity-75' : isStepAccessible(1) ? 'bg-gray-50' : 'bg-gray-200 opacity-50'}`}>
               <div className="mb-3">
-                <h3 className="font-semibold text-lg">
-                  Step 1: Get Alchemy Signer Address
-                  {isStepCompleted(1) && <span className="ml-2 text-green-600">✓</span>}
-                </h3>
+                <div className="flex items-center justify-between">
+                  <h3 className="font-semibold text-lg">
+                    Step 1: Get Alchemy Signer Address
+                    {isStepCompleted(1) && <span className="ml-2 text-green-600">✓</span>}
+                  </h3>
+                  {isStepCompleted(1) && (
+                    <button
+                      onClick={() => toggleStepCollapse(1)}
+                      className="p-1 text-gray-500 hover:text-gray-700 transition-colors cursor-pointer"
+                      title={isStepCollapsed(1) ? "Expand step" : "Collapse step"}
+                    >
+                      <svg 
+                        className={`w-5 h-5 transition-transform duration-200 ${isStepCollapsed(1) ? 'rotate-180' : ''}`} 
+                        fill="currentColor" 
+                        viewBox="0 0 20 20"
+                      >
+                        <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
+                      </svg>
+                    </button>
+                  )}
+                </div>
                 <p className="text-sm text-gray-600 mt-1">
-                  API Endpoint: <a href="https://docs.alchemy.com/reference/account-kit" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:text-blue-800 underline"><code className="bg-gray-200 px-1 rounded text-xs">useSigner().getAddress()</code></a>
+                  SDK Hook: <a href="https://www.alchemy.com/docs/wallets/reference/account-kit/react/hooks/useSigner" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:text-blue-800 underline"><code className="bg-gray-200 px-1 rounded text-xs">useSigner().getAddress()</code></a>
                 </p>
               </div>
-              {!isStepCompleted(1) && (
-                <button
-                  className="akui-btn akui-btn-primary w-full"
-                  onClick={async () => {
-                    try {
-                      // Hook: useSignerAddress -> No API route (uses Account Kit directly)
-                      const address = await getSignerAddress();
-                      setSignerAddress(address);
-                      setCompletedSteps(prev => new Set([...prev, 1]));
-                      console.log('Signer address:', address);
-                    } catch (error) {
-                      console.error('Error getting signer address:', error);
-                    }
-                  }}
-                  disabled={isGettingAddress || !isStepAccessible(1)}
-                >
-                  {isGettingAddress ? 'Getting Address...' : 'Get Address'}
-                </button>
-              )}
               
-              {signerAddress && (
-                <div className="bg-green-100 p-3 rounded mt-3">
-                  <p className="text-green-800 font-semibold text-base">Signer Address Retrieved!</p>
-                  <div className="flex items-center gap-2 mt-2">
-                    <p className="text-sm"><strong>Address:</strong> {signerAddress.slice(0, 10)}...{signerAddress.slice(-8)}</p>
-                    <button 
-                      onClick={() => handleCopy(signerAddress, 'signer-address')}
-                      className="text-xs bg-green-200 hover:bg-green-300 px-2 py-1 rounded cursor-pointer transition-colors"
-                    >
-                      {copiedItems.has('signer-address') ? 'Copied!' : 'Copy'}
-                    </button>
+              {/* Collapsible content */}
+              <div className={`transition-all duration-300 ease-in-out ${isStepCollapsed(1) ? 'max-h-0 overflow-hidden' : 'max-h-96'}`}>
+                {!isStepCompleted(1) && (
+                  <button
+                    className="btn-gradient w-full"
+                    onClick={async () => {
+                      try {
+                        // Hook: useSignerAddress -> No API route (uses Account Kit directly)
+                        const address = await getSignerAddress();
+                        setSignerAddress(address);
+                        markStepCompleted(1);
+                        console.log('Signer address:', address);
+                      } catch (error) {
+                        console.error('Error getting signer address:', error);
+                      }
+                    }}
+                    disabled={isGettingAddress || !isStepAccessible(1)}
+                  >
+                    {isGettingAddress ? 'Getting Address...' : 'Get Address'}
+                  </button>
+                )}
+                
+                {signerAddress && (
+                  <div className="bg-green-100 p-3 rounded mt-3">
+                    <p className="text-green-800 font-semibold text-base">Signer Address Retrieved!</p>
+                    <div className="flex items-center gap-2 mt-2">
+                      <p className="text-sm"><strong>Address:</strong> {signerAddress.slice(0, 6)}...{signerAddress.slice(-4)}</p>
+                      <button 
+                        onClick={() => handleCopy(signerAddress, 'signer-address')}
+                        className="text-xs bg-green-200 hover:bg-green-300 px-2 py-1 rounded cursor-pointer transition-colors"
+                      >
+                        {copiedItems.has('signer-address') ? 'Copied!' : 'Copy'}
+                      </button>
+                    </div>
                   </div>
-                </div>
-              )}
+                )}
+              </div>
             </div>
             
             {/* Step 2 */}
             <div className={`p-4 rounded-lg ${isStepCompleted(2) ? 'bg-gray-100 opacity-75' : isStepAccessible(2) ? 'bg-gray-50' : 'bg-gray-200 opacity-50'}`}>
               <div className="mb-3">
-                <h3 className="font-semibold text-lg">
-                  Step 2: Request Smart Account
-                  {isStepCompleted(2) && <span className="ml-2 text-green-600">✓</span>}
-                </h3>
+                <div className="flex items-center justify-between">
+                  <h3 className="font-semibold text-lg">
+                    Step 2: Request Smart Account
+                    {isStepCompleted(2) && <span className="ml-2 text-green-600">✓</span>}
+                  </h3>
+                  {isStepCompleted(2) && (
+                    <button
+                      onClick={() => toggleStepCollapse(2)}
+                      className="p-1 text-gray-500 hover:text-gray-700 transition-colors cursor-pointer"
+                      title={isStepCollapsed(2) ? "Expand step" : "Collapse step"}
+                    >
+                      <svg 
+                        className={`w-5 h-5 transition-transform duration-200 ${isStepCollapsed(2) ? 'rotate-180' : ''}`} 
+                        fill="currentColor" 
+                        viewBox="0 0 20 20"
+                      >
+                        <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
+                      </svg>
+                    </button>
+                  )}
+                </div>
                 <p className="text-sm text-gray-600 mt-1">
                   API Endpoint: <a href="https://docs.alchemy.com/reference/wallet-requestaccount" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:text-blue-800 underline"><code className="bg-gray-200 px-1 rounded text-xs">wallet_requestAccount</code></a>
                 </p>
               </div>
-              {!isStepCompleted(2) && (
-                <button
-                  className="akui-btn akui-btn-primary w-full"
-                  onClick={async () => {
-                    try {
-                      // Hook: useSignerAddress -> No API route (uses Account Kit directly)
-                      const signerAddress = await getSignerAddress();
-                      // Hook: useSmartAccount -> /api/wallet-request-account
-                      await requestAccount(signerAddress);
-                      setCompletedSteps(prev => new Set([...prev, 2]));
-                    } catch (error) {
-                      console.error('Error requesting smart account:', error);
-                    }
-                  }}
-                  disabled={isRequestingAccount || isGettingAddress || !isStepAccessible(2)}
-                >
-                  {isRequestingAccount ? 'Requesting Account...' : 'Request Smart Account'}
-                </button>
-              )}
               
-              {accountError && (
-                <p className="text-red-500 text-sm mt-2">Account Error: {accountError}</p>
-              )}
-              
-              {smartAccountResult && (
-                <div className="bg-green-100 p-3 rounded mt-3">
-                  <p className="text-green-800 font-semibold text-base">Smart Account Retrieved!</p>
-                  <div className="flex items-center gap-2 mt-2">
-                    <p className="text-sm"><strong>Address:</strong> {smartAccountResult.accountAddress.slice(0, 10)}...{smartAccountResult.accountAddress.slice(-8)}</p>
-                    <button 
-                      onClick={() => handleCopy(smartAccountResult.accountAddress, 'smart-account-address')}
-                      className="text-xs bg-green-200 hover:bg-green-300 px-2 py-1 rounded cursor-pointer transition-colors"
-                    >
-                      {copiedItems.has('smart-account-address') ? 'Copied!' : 'Copy'}
-                    </button>
+              {/* Collapsible content */}
+              <div className={`transition-all duration-300 ease-in-out ${isStepCollapsed(2) ? 'max-h-0 overflow-hidden' : 'max-h-96'}`}>
+                {!isStepCompleted(2) && (
+                  <button
+                    className="btn-gradient w-full"
+                    onClick={async () => {
+                      try {
+                        startNextStep(2); // Collapse previous step
+                        // Hook: useSignerAddress -> No API route (uses Account Kit directly)
+                        const signerAddress = await getSignerAddress();
+                        // Hook: useSmartAccount -> /api/wallet-request-account
+                        await requestAccount(signerAddress);
+                        markStepCompleted(2);
+                      } catch (error) {
+                        console.error('Error requesting smart account:', error);
+                      }
+                    }}
+                    disabled={isRequestingAccount || isGettingAddress || !isStepAccessible(2)}
+                  >
+                    {isRequestingAccount ? 'Requesting Account...' : 'Request Smart Account'}
+                  </button>
+                )}
+                
+                {accountError && (
+                  <p className="text-red-500 text-sm mt-2">Account Error: {accountError}</p>
+                )}
+                
+                {smartAccountResult && (
+                  <div className="bg-green-100 p-3 rounded mt-3">
+                    <p className="text-green-800 font-semibold text-base">Smart Account Retrieved!</p>
+                    <div className="flex items-center gap-2 mt-2">
+                      <p className="text-sm"><strong>Address:</strong> {smartAccountResult.accountAddress.slice(0, 6)}...{smartAccountResult.accountAddress.slice(-4)}</p>
+                      <button 
+                        onClick={() => handleCopy(smartAccountResult.accountAddress, 'smart-account-address')}
+                        className="text-xs bg-green-200 hover:bg-green-300 px-2 py-1 rounded cursor-pointer transition-colors"
+                      >
+                        {copiedItems.has('smart-account-address') ? 'Copied!' : 'Copy'}
+                      </button>
+                    </div>
+                    <div className="flex items-center gap-2 mt-1">
+                      <p className="text-sm"><strong>ID:</strong> {smartAccountResult.id.slice(0, 6)}...{smartAccountResult.id.slice(-4)}</p>
+                      <button 
+                        onClick={() => handleCopy(smartAccountResult.id, 'smart-account-id')}
+                        className="text-xs bg-green-200 hover:bg-green-300 px-2 py-1 rounded cursor-pointer transition-colors"
+                      >
+                        {copiedItems.has('smart-account-id') ? 'Copied!' : 'Copy'}
+                      </button>
+                    </div>
                   </div>
-                  <div className="flex items-center gap-2 mt-1">
-                    <p className="text-sm"><strong>ID:</strong> {smartAccountResult.id.slice(0, 10)}...{smartAccountResult.id.slice(-8)}</p>
-                    <button 
-                      onClick={() => handleCopy(smartAccountResult.id, 'smart-account-id')}
-                      className="text-xs bg-green-200 hover:bg-green-300 px-2 py-1 rounded cursor-pointer transition-colors"
-                    >
-                      {copiedItems.has('smart-account-id') ? 'Copied!' : 'Copy'}
-                    </button>
-                  </div>
-                </div>
-              )}
+                )}
+              </div>
             </div>
             
             {/* Step 3 */}
             <div className={`p-4 rounded-lg ${isStepCompleted(3) ? 'bg-gray-100 opacity-75' : isStepAccessible(3) ? 'bg-gray-50' : 'bg-gray-200 opacity-50'}`}>
               <div className="mb-3">
-                <h3 className="font-semibold text-lg">
-                  Step 3: Create Session
-                  {isStepCompleted(3) && <span className="ml-2 text-green-600">✓</span>}
-                </h3>
+                <div className="flex items-center justify-between">
+                  <h3 className="font-semibold text-lg">
+                    Step 3: Create Session
+                    {isStepCompleted(3) && <span className="ml-2 text-green-600">✓</span>}
+                  </h3>
+                  {isStepCompleted(3) && (
+                    <button
+                      onClick={() => toggleStepCollapse(3)}
+                      className="p-1 text-gray-500 hover:text-gray-700 transition-colors cursor-pointer"
+                      title={isStepCollapsed(3) ? "Expand step" : "Collapse step"}
+                    >
+                      <svg 
+                        className={`w-5 h-5 transition-transform duration-200 ${isStepCollapsed(3) ? 'rotate-180' : ''}`} 
+                        fill="currentColor" 
+                        viewBox="0 0 20 20"
+                      >
+                        <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
+                      </svg>
+                    </button>
+                  )}
+                </div>
                 <p className="text-sm text-gray-600 mt-1">
                   API Endpoint: <a href="https://docs.alchemy.com/reference/wallet-createsession" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:text-blue-800 underline"><code className="bg-gray-200 px-1 rounded text-xs">wallet_createSession</code></a>
                 </p>
@@ -366,12 +513,64 @@ export default function Home() {
                     </label>
                   </div>
                 </div>
+                
+                {/* Session Time Selection */}
+                <div className="mt-3">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Session Duration:
+                  </label>
+                  <div className="space-y-2">
+                    <label className="flex items-center">
+                      <input
+                        type="radio"
+                        name="sessionTime"
+                        value="5min"
+                        checked={selectedSessionTime === '5min'}
+                        onChange={(e) => setSelectedSessionTime(e.target.value as '5min')}
+                        className="mr-2"
+                      />
+                      <span className="text-sm text-gray-700">
+                        <strong>5 Minutes</strong>
+                      </span>
+                    </label>
+                    <label className="flex items-center">
+                      <input
+                        type="radio"
+                        name="sessionTime"
+                        value="1hour"
+                        checked={selectedSessionTime === '1hour'}
+                        onChange={(e) => setSelectedSessionTime(e.target.value as '1hour')}
+                        className="mr-2"
+                      />
+                      <span className="text-sm text-gray-700">
+                        <strong>1 Hour</strong>
+                      </span>
+                    </label>
+                    <label className="flex items-center">
+                      <input
+                        type="radio"
+                        name="sessionTime"
+                        value="1day"
+                        checked={selectedSessionTime === '1day'}
+                        onChange={(e) => setSelectedSessionTime(e.target.value as '1day')}
+                        className="mr-2"
+                      />
+                      <span className="text-sm text-gray-700">
+                        <strong>1 Day</strong>
+                      </span>
+                    </label>
+                  </div>
+                </div>
               </div>
-              {!isStepCompleted(3) && (
+              
+              {/* Collapsible content */}
+              <div className={`transition-all duration-300 ease-in-out ${isStepCollapsed(3) ? 'max-h-0 overflow-hidden' : 'max-h-96'}`}>
+                {!isStepCompleted(3) && (
                 <button
-                  className="akui-btn akui-btn-primary w-full"
+                  className="btn-gradient w-full"
                   onClick={async () => {
                     try {
+                      startNextStep(3); // Collapse previous step
                       if (!smartAccountResult?.accountAddress) {
                         console.error('No smart account available. Please create one first.');
                         return;
@@ -384,9 +583,10 @@ export default function Home() {
                         account: smartAccountResult.accountAddress,
                         chainId: '0xaa36a7', // Ethereum Sepolia chain ID
                         permissionType: selectedPermissionType, // Pass the selected permission type
+                        expiry: Math.floor(Date.now() / 1000) + getSessionTimeInSeconds(selectedSessionTime), // Use selected session time
                         // sessionKeyAddress will be auto-generated
                       });
-                      setCompletedSteps(prev => new Set([...prev, 3]));
+                      markStepCompleted(3);
                     } catch (error) {
                       console.error('Error creating session:', error);
                     }
@@ -405,7 +605,7 @@ export default function Home() {
                 <div className="bg-blue-100 p-3 rounded mt-3">
                   <p className="text-blue-800 font-semibold text-base">Session Created!</p>
                   <div className="flex items-center gap-2 mt-2">
-                    <p className="text-sm"><strong>Session ID:</strong> {sessionResult.sessionId.slice(0, 10)}...{sessionResult.sessionId.slice(-8)}</p>
+                    <p className="text-sm"><strong>Session ID:</strong> {sessionResult.sessionId.slice(0, 6)}...{sessionResult.sessionId.slice(-4)}</p>
                     <button 
                       onClick={() => handleCopy(sessionResult.sessionId, 'session-id')}
                       className="text-xs bg-blue-200 hover:bg-blue-300 px-2 py-1 rounded cursor-pointer transition-colors"
@@ -414,7 +614,7 @@ export default function Home() {
                     </button>
                   </div>
                   <div className="flex items-center gap-2 mt-1">
-                    <p className="text-sm"><strong>Session Key:</strong> {sessionResult.sessionKey.address.slice(0, 10)}...{sessionResult.sessionKey.address.slice(-8)}</p>
+                    <p className="text-sm"><strong>Session Key:</strong> {sessionResult.sessionKey.address.slice(0, 6)}...{sessionResult.sessionKey.address.slice(-4)}</p>
                     <button 
                       onClick={() => handleCopy(sessionResult.sessionKey.address, 'session-key-address')}
                       className="text-xs bg-blue-200 hover:bg-blue-300 px-2 py-1 rounded cursor-pointer transition-colors"
@@ -426,24 +626,46 @@ export default function Home() {
                   <p className="text-sm mt-1"><strong>Permission Type:</strong> {selectedPermissionType}</p>
                 </div>
               )}
+              </div>
             </div>
             
             {/* Step 4 */}
             <div className={`p-4 rounded-lg ${isStepCompleted(4) ? 'bg-gray-100 opacity-75' : isStepAccessible(4) ? 'bg-gray-50' : 'bg-gray-200 opacity-50'}`}>
               <div className="mb-3">
-                <h3 className="font-semibold text-lg">
-                  Step 4: Sign Session Authorization
-                  {isStepCompleted(4) && <span className="ml-2 text-green-600">✓</span>}
-                </h3>
+                <div className="flex items-center justify-between">
+                  <h3 className="font-semibold text-lg">
+                    Step 4: Sign Session Authorization
+                    {isStepCompleted(4) && <span className="ml-2 text-green-600">✓</span>}
+                  </h3>
+                  {isStepCompleted(4) && (
+                    <button
+                      onClick={() => toggleStepCollapse(4)}
+                      className="p-1 text-gray-500 hover:text-gray-700 transition-colors cursor-pointer"
+                      title={isStepCollapsed(4) ? "Expand step" : "Collapse step"}
+                    >
+                      <svg 
+                        className={`w-5 h-5 transition-transform duration-200 ${isStepCollapsed(4) ? 'rotate-180' : ''}`} 
+                        fill="currentColor" 
+                        viewBox="0 0 20 20"
+                      >
+                        <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
+                      </svg>
+                    </button>
+                  )}
+                </div>
                 <p className="text-sm text-gray-600 mt-1">
-                  API Endpoint: <a href="https://docs.alchemy.com/reference/account-kit" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:text-blue-800 underline"><code className="bg-gray-200 px-1 rounded text-xs">useSigner().signTypedData()</code></a>
+                  SDK Hook: <a href="https://www.alchemy.com/docs/wallets/reference/account-kit/wallet-client/functions/signTypedData" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:text-blue-800 underline"><code className="bg-gray-200 px-1 rounded text-xs">useSigner().signTypedData()</code></a>
                 </p>
               </div>
-              {!isStepCompleted(4) && (
+              
+              {/* Collapsible content */}
+              <div className={`transition-all duration-300 ease-in-out ${isStepCollapsed(4) ? 'max-h-0 overflow-hidden' : 'max-h-96'}`}>
+                {!isStepCompleted(4) && (
                 <button
-                  className="akui-btn akui-btn-primary w-full"
+                  className="btn-gradient w-full"
                   onClick={async () => {
                     try {
+                      startNextStep(4); // Collapse previous step
                       if (!sessionResult?.sessionId || !sessionResult?.signatureRequest) {
                         console.error('No session available. Please create a session first.');
                         return;
@@ -454,7 +676,7 @@ export default function Home() {
                         sessionResult.sessionId,
                         sessionResult.signatureRequest
                       );
-                      setCompletedSteps(prev => new Set([...prev, 4]));
+                      markStepCompleted(4);
                     } catch (error) {
                       console.error('Error signing session authorization:', error);
                     }
@@ -473,7 +695,7 @@ export default function Home() {
                 <div className="bg-purple-100 p-3 rounded mt-3">
                   <p className="text-purple-800 font-semibold text-base">Session Authorized!</p>
                   <div className="flex items-center gap-2 mt-2">
-                    <p className="text-sm"><strong>Session ID:</strong> {authorizationResult.sessionId.slice(0, 10)}...{authorizationResult.sessionId.slice(-8)}</p>
+                    <p className="text-sm"><strong>Session ID:</strong> {authorizationResult.sessionId.slice(0, 6)}...{authorizationResult.sessionId.slice(-4)}</p>
                     <button 
                       onClick={() => handleCopy(authorizationResult.sessionId, 'auth-session-id')}
                       className="text-xs bg-purple-200 hover:bg-purple-300 px-2 py-1 rounded cursor-pointer transition-colors"
@@ -482,7 +704,7 @@ export default function Home() {
                     </button>
                   </div>
                   <div className="flex items-center gap-2 mt-1">
-                    <p className="text-sm"><strong>Signature:</strong> {authorizationResult.signature.slice(0, 10)}...{authorizationResult.signature.slice(-8)}</p>
+                    <p className="text-sm"><strong>Signature:</strong> {authorizationResult.signature.slice(0, 6)}...{authorizationResult.signature.slice(-4)}</p>
                     <button 
                       onClick={() => handleCopy(authorizationResult.signature, 'auth-signature')}
                       className="text-xs bg-purple-200 hover:bg-purple-300 px-2 py-1 rounded cursor-pointer transition-colors"
@@ -491,7 +713,7 @@ export default function Home() {
                     </button>
                   </div>
                   <div className="flex items-center gap-2 mt-1">
-                    <p className="text-sm"><strong>Authorization:</strong> {authorizationResult.authorization.slice(0, 10)}...{authorizationResult.authorization.slice(-8)}</p>
+                    <p className="text-sm"><strong>Authorization:</strong> {authorizationResult.authorization.slice(0, 6)}...{authorizationResult.authorization.slice(-4)}</p>
                     <button 
                       onClick={() => handleCopy(authorizationResult.authorization, 'auth-authorization')}
                       className="text-xs bg-purple-200 hover:bg-purple-300 px-2 py-1 rounded cursor-pointer transition-colors"
@@ -501,43 +723,64 @@ export default function Home() {
                   </div>
                 </div>
               )}
+              </div>
             </div>
             
             {/* Step 5 */}
             <div className={`p-4 rounded-lg ${isStepCompleted(5) ? 'bg-gray-100 opacity-75' : isStepAccessible(5) ? 'bg-gray-50' : 'bg-gray-200 opacity-50'}`}>
               <div className="mb-3">
-                <h3 className="font-semibold text-lg">
-                  Step 5: Prepare Background Tasks
-                  {isStepCompleted(5) && <span className="ml-2 text-green-600">✓</span>}
-                </h3>
+                <div className="flex items-center justify-between">
+                  <h3 className="font-semibold text-lg">
+                    Step 5: Prepare User Operation
+                    {isStepCompleted(5) && <span className="ml-2 text-green-600">✓</span>}
+                  </h3>
+                  {isStepCompleted(5) && (
+                    <button
+                      onClick={() => toggleStepCollapse(5)}
+                      className="p-1 text-gray-500 hover:text-gray-700 transition-colors cursor-pointer"
+                      title={isStepCollapsed(5) ? "Expand step" : "Collapse step"}
+                    >
+                      <svg 
+                        className={`w-5 h-5 transition-transform duration-200 ${isStepCollapsed(5) ? 'rotate-180' : ''}`} 
+                        fill="currentColor" 
+                        viewBox="0 0 20 20"
+                      >
+                        <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
+                      </svg>
+                    </button>
+                  )}
+                </div>
                 <p className="text-sm text-gray-600 mt-1">
                   API Endpoint: <a href="https://docs.alchemy.com/reference/wallet-preparecalls" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:text-blue-800 underline"><code className="bg-gray-200 px-1 rounded text-xs">wallet_prepareCalls</code></a>
                 </p>
               </div>
-              {!isStepCompleted(5) && (
+              
+              {/* Collapsible content */}
+              <div className={`transition-all duration-300 ease-in-out ${isStepCollapsed(5) ? 'max-h-0 overflow-hidden' : 'max-h-96'}`}>
+                {!isStepCompleted(5) && (
                 <button
-                  className="akui-btn akui-btn-primary w-full"
+                  className="btn-gradient w-full"
                   onClick={async () => {
                     try {
+                      startNextStep(5); // Collapse previous step
                       if (!authorizationResult?.sessionId || !authorizationResult?.signature || !smartAccountResult?.accountAddress) {
                         console.error('Missing required data from previous steps');
                         return;
                       }
                       
                       // Hook: usePrepareCalls -> /api/wallet-prepare-calls
-                      // Sample limit order call - simple contract interaction
                       await prepareCalls({
                         sessionId: authorizationResult.sessionId,
                         signature: authorizationResult.signature,
                         accountAddress: smartAccountResult.accountAddress,
                         chainId: '0xaa36a7', // Ethereum Sepolia
                         calls: [{
-                          to: '0x0000000000000000000000000000000000000000', // Burn address (always valid)
-                          value: '0x0',
-                          data: '0x' // Empty data for simple call
+                          to: '0x4Ff840AC60adbdCa20e5640fC2124F5d639Ea501', // random address
+                          value: '0x0', // Zero value for no ETH transfer - just a placeholder!
+                          // data: '0x' // Empty data for simple call
                         }]
                       });
-                      setCompletedSteps(prev => new Set([...prev, 5]));
+                      markStepCompleted(5);
                     } catch (error) {
                       console.error('Error preparing calls:', error);
                     }
@@ -569,7 +812,7 @@ export default function Home() {
                       </div>
                       <div className="flex items-center gap-2">
                         <span className="font-medium">Sender:</span>
-                        <span className="font-mono">{prepareCallsResult.userOpRequest.sender?.slice(0, 10)}...{prepareCallsResult.userOpRequest.sender?.slice(-8)}</span>
+                        <span className="font-mono">{prepareCallsResult.userOpRequest.sender?.slice(0, 6)}...{prepareCallsResult.userOpRequest.sender?.slice(-4)}</span>
                       </div>
                       <div className="flex items-center gap-2">
                         <span className="font-medium">Nonce:</span>
@@ -595,7 +838,7 @@ export default function Home() {
                       </div>
                       <div className="flex items-center gap-2">
                         <span className="font-medium">Hash to Sign:</span>
-                        <span className="font-mono">{prepareCallsResult.signatureRequest.data.raw.slice(0, 10)}...{prepareCallsResult.signatureRequest.data.raw.slice(-8)}</span>
+                        <span className="font-mono">{prepareCallsResult.signatureRequest.data.raw.slice(0, 6)}...{prepareCallsResult.signatureRequest.data.raw.slice(-4)}</span>
                         <button 
                           onClick={() => handleCopy(prepareCallsResult.signatureRequest.data.raw, 'hash-to-sign')}
                           className="text-xs bg-orange-200 hover:bg-orange-300 px-2 py-1 rounded cursor-pointer transition-colors"
@@ -607,24 +850,46 @@ export default function Home() {
                   </div>
                 </div>
               )}
+              </div>
             </div>
             
             {/* Step 6 */}
             <div className={`p-4 rounded-lg ${isStepCompleted(6) ? 'bg-gray-100 opacity-75' : isStepAccessible(6) ? 'bg-gray-50' : 'bg-gray-200 opacity-50'}`}>
               <div className="mb-3">
-                <h3 className="font-semibold text-lg">
-                  Step 6: Sign & Send Transaction
-                  {isStepCompleted(6) && <span className="ml-2 text-green-600">✓</span>}
-                </h3>
+                <div className="flex items-center justify-between">
+                  <h3 className="font-semibold text-lg">
+                    Step 6: Sign & Send Transaction
+                    {isStepCompleted(6) && <span className="ml-2 text-green-600">✓</span>}
+                  </h3>
+                  {isStepCompleted(6) && (
+                    <button
+                      onClick={() => toggleStepCollapse(6)}
+                      className="p-1 text-gray-500 hover:text-gray-700 transition-colors cursor-pointer"
+                      title={isStepCollapsed(6) ? "Expand step" : "Collapse step"}
+                    >
+                      <svg 
+                        className={`w-5 h-5 transition-transform duration-200 ${isStepCollapsed(6) ? 'rotate-180' : ''}`} 
+                        fill="currentColor" 
+                        viewBox="0 0 20 20"
+                      >
+                        <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
+                      </svg>
+                    </button>
+                  )}
+                </div>
                 <p className="text-sm text-gray-600 mt-1">
                   API Endpoint: <a href="https://docs.alchemy.com/reference/wallet-sendpreparedcalls" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:text-blue-800 underline"><code className="bg-gray-200 px-1 rounded text-xs">wallet_sendPreparedCalls</code></a>
                 </p>
               </div>
-              {!isStepCompleted(6) && (
+              
+              {/* Collapsible content */}
+              <div className={`transition-all duration-300 ease-in-out ${isStepCollapsed(6) ? 'max-h-0 overflow-hidden' : 'max-h-96'}`}>
+                {!isStepCompleted(6) && (
                 <button
-                  className="akui-btn akui-btn-primary w-full"
+                  className="btn-gradient w-full"
                   onClick={async () => {
                     try {
+                      startNextStep(6); // Collapse previous step
                       if (!prepareCallsResult || !authorizationResult?.sessionId || !authorizationResult?.signature || !sessionResult?.sessionKey) {
                         console.error('Missing prepared calls, session data, or session key');
                         return;
@@ -684,7 +949,7 @@ export default function Home() {
                         console.error('No call IDs found in response:', response);
                       }
 
-                      setCompletedSteps(prev => new Set([...prev, 6]));
+                      markStepCompleted(6);
                     } catch (error) {
                       console.error('Error sending calls:', error);
                     }
@@ -738,7 +1003,7 @@ export default function Home() {
                     <div className="bg-emerald-50 p-2 rounded">
                       <div className="flex items-center gap-2">
                         <p className="text-sm font-mono text-emerald-800">
-                          {transactionHash.slice(0, 10)}...{transactionHash.slice(-8)}
+                          {transactionHash.slice(0, 6)}...{transactionHash.slice(-4)}
                         </p>
                         <button 
                           onClick={() => handleCopy(transactionHash, 'final-tx-hash')}
@@ -777,76 +1042,77 @@ export default function Home() {
                   <p className="text-blue-700 text-xs mt-1">This may take a few moments while the transaction is processed on the blockchain.</p>
                 </div>
               )}
+              </div>
             </div>
           </div>
-          </div>
+        </div>
         </div>
       ) : (
-        <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100">
-          <div className="max-w-md w-full mx-4">
-            <div className="bg-white rounded-2xl shadow-xl p-8 text-center">
-              {/* App Title */}
-              <div className="mb-8">
-                <h1 className="text-4xl font-bold text-gray-900 mb-2">
+        <div className="flex min-h-screen">
+          {/* Left Sidebar */}
+          <div className="w-64 bg-gray-50 border-r border-gray-200 p-6">
+            <div className="sticky top-6">
+              <div className="mb-6">
+                <div className="flex items-center justify-between mb-3">
+                  <h3 className="font-semibold text-gray-900">Welcome</h3>
+                </div>
+                <p className="text-sm text-gray-600 mb-4">
+                  Sign in to explore session key functionality with Alchemy Smart Wallets
+                </p>
+                
+                {/* Features Preview */}
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                  <h4 className="text-sm font-semibold text-blue-800 mb-3">What you&apos;ll learn:</h4>
+                  <ul className="text-xs text-blue-700 space-y-2">
+                    <li className="flex items-center gap-2">
+                      <svg className="w-3 h-3 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                      </svg>
+                      Create and manage session keys
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <svg className="w-3 h-3 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                      </svg>
+                      Set spending limits and permissions
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <svg className="w-3 h-3 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                      </svg>
+                      Execute transactions with session keys
+                    </li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          {/* Main Content */}
+          <div className="flex-1 p-8">
+            <div className="text-left mb-12">
+              <div className="mb-6">
+                <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent mb-3">
                   Alchemy Smart Wallets
                 </h1>
-                <h2 className="text-2xl font-semibold text-blue-600 mb-4">
+                <h2 className="text-2xl font-semibold text-gray-800 mb-4">
                   Session Key Demo
                 </h2>
-                <p className="text-gray-600 text-lg">
-                  Learn how to implement session keys with Alchemy Smart Wallets
-                </p>
+                <div className="w-24 h-1 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full"></div>
               </div>
+            </div>
 
-              {/* Login Section */}
-              <div className="mb-6">
-                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
-                  <div className="flex items-center gap-2 mb-2">
-                    <svg className="w-5 h-5 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
-                    </svg>
-                    <h3 className="text-lg font-semibold text-blue-800">Get Started</h3>
-                  </div>
-                  <p className="text-sm text-blue-700">
-                    Sign in to begin exploring session key functionality with Alchemy Smart Wallets
-                  </p>
-                </div>
-
-                <button 
-                  className="akui-btn akui-btn-primary w-full text-lg py-3 px-6 rounded-lg font-semibold shadow-lg hover:shadow-xl transition-all duration-200"
-                  onClick={openAuthModal}
-                >
-                  <svg className="w-5 h-5 mr-2 inline" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M3 3a1 1 0 000 2v8a2 2 0 002 2h2.586l-1.293 1.293a1 1 0 101.414 1.414L10 15.414l2.293 2.293a1 1 0 001.414-1.414L12.414 15H15a2 2 0 002-2V5a1 1 0 100-2H3zm11.707 4.707a1 1 0 00-1.414-1.414L10 9.586 8.707 8.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                  </svg>
-                  Sign In to Continue
-                </button>
-              </div>
-
-              {/* Features Preview */}
-              <div className="text-left">
-                <h4 className="text-sm font-semibold text-gray-700 mb-3">What you&apos;ll learn:</h4>
-                <ul className="text-sm text-gray-600 space-y-2">
-                  <li className="flex items-center gap-2">
-                    <svg className="w-4 h-4 text-green-500" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                    </svg>
-                    Create and manage session keys
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <svg className="w-4 h-4 text-green-500" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                    </svg>
-                    Set spending limits and permissions
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <svg className="w-4 h-4 text-green-500" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                    </svg>
-                    Execute transactions with session keys
-                  </li>
-                </ul>
-              </div>
+            {/* Login Section */}
+            <div className="max-w-md">
+              <button 
+                className="btn-gradient w-full text-lg py-4 px-6 rounded-lg font-semibold shadow-lg hover:shadow-xl transition-all duration-200"
+                onClick={openAuthModal}
+              >
+                <svg className="w-5 h-5 mr-2 inline" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M3 3a1 1 0 000 2v8a2 2 0 002 2h2.586l-1.293 1.293a1 1 0 101.414 1.414L10 15.414l2.293 2.293a1 1 0 001.414-1.414L12.414 15H15a2 2 0 002-2V5a1 1 0 100-2H3zm11.707 4.707a1 1 0 00-1.414-1.414L10 9.586 8.707 8.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                </svg>
+                Sign In to Continue
+              </button>
             </div>
           </div>
         </div>

@@ -45,6 +45,8 @@ export function usePrepareCalls() {
     setError(null);
     setResult(null);
 
+    console.log('prepareCalls params', params);
+
     try {
       const response = await fetch('/api/wallet-prepare-calls', {
         method: 'POST',
