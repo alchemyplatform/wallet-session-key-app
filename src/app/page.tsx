@@ -777,7 +777,7 @@ export default function Home() {
                         calls: [{
                           to: '0x4Ff840AC60adbdCa20e5640fC2124F5d639Ea501', // random address
                           value: '0x0', // Zero value for no ETH transfer - just a placeholder!
-                          // data: '0x' // Empty data for simple call
+                          data: '0x' // Empty data for simple call
                         }]
                       });
                       markStepCompleted(5);
@@ -897,14 +897,6 @@ export default function Home() {
                       
                       // Hook: useSessionKeySigner -> No API route (uses viem directly)
                       // Sign the hash with the session key
-
-
-                      // ask peter here how to sign the hash with the session key
-                      // i need to sign the hash with the session key
-                      // i need to return the signature
-                      // i need to use the session key address to sign the hash
-                      // i need to use the session key private key to sign the hash
-                      // i need to use the session key public key to sign the hash
                       const hashToSign = prepareCallsResult.signatureRequest.data.raw;
                       const sessionKeySignature = await signWithSessionKey(
                         sessionResult.sessionKey.privateKey,
