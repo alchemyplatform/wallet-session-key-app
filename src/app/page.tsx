@@ -193,7 +193,7 @@ export default function Home() {
         <div className="flex min-h-screen">
           {/* Left Sidebar */}
           <div className="w-64 bg-gray-50 border-r border-gray-200 p-6">
-            <div className="sticky top-6">
+            <div className="sticky top-6 flex flex-col h-[calc(100vh-3rem)]">
               <div className="mb-6">
                 <div className="flex items-center justify-between mb-3">
                   <h3 className="font-semibold text-gray-900">Account</h3>
@@ -265,6 +265,56 @@ export default function Home() {
                     </div>
                   </div>
                 )}
+              </div>
+              
+              {/* Footer Links */}
+              <div className="mt-auto pt-6 border-t border-gray-200">
+                <div className="space-y-2">
+                  <a 
+                    href="https://github.com/alchemyplatform/wallet-session-key-app" 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-2 text-sm text-gray-600 hover:text-gray-900 transition-colors"
+                  >
+                    <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M10 0C4.477 0 0 4.484 0 10.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0110 4.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.203 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.942.359.31.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0020 10.017C20 4.484 15.522 0 10 0z" clipRule="evenodd" />
+                    </svg>
+                    GitHub Repository
+                  </a>
+                  <a 
+                    href="https://www.alchemy.com/docs/wallets" 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-2 text-sm text-gray-600 hover:text-gray-900 transition-colors"
+                  >
+                    <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                      <path d="M9 2a1 1 0 000 2h2a1 1 0 100-2H9z" />
+                      <path fillRule="evenodd" d="M4 5a2 2 0 012-2 3 3 0 003 3h2a3 3 0 003-3 2 2 0 012 2v11a2 2 0 01-2 2H6a2 2 0 01-2-2V5zm3 4a1 1 0 000 2h.01a1 1 0 100-2H7zm3 0a1 1 0 000 2h3a1 1 0 100-2h-3zm-3 4a1 1 0 100 2h.01a1 1 0 100-2H7zm3 0a1 1 0 100 2h3a1 1 0 100-2h-3z" clipRule="evenodd" />
+                    </svg>
+                    Alchemy Docs
+                  </a>
+                  <a 
+                    href="https://sandbox.alchemy.com" 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-2 text-sm text-gray-600 hover:text-gray-900 transition-colors"
+                  >
+                    <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M4 2a2 2 0 00-2 2v11a2 2 0 002 2h12a2 2 0 002-2V4a2 2 0 00-2-2H4zm3 2h10a1 1 0 011 1v9a1 1 0 01-1 1H7V4z" clipRule="evenodd" />
+                    </svg>
+                    Alchemy Sandbox
+                  </a>
+                  <a 
+                    href="mailto:al@alchemy.com" 
+                    className="flex items-center gap-2 text-sm text-gray-600 hover:text-gray-900 transition-colors"
+                  >
+                    <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                      <path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884z" />
+                      <path d="M18 8.118l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.118z" />
+                    </svg>
+                    Questions? al@alchemy.com
+                  </a>
+                </div>
               </div>
             </div>
           </div>
@@ -768,16 +818,29 @@ export default function Home() {
                         return;
                       }
                       
+                      // =====================================================
+                      // Prepare a user operation with session authorization
                       // Hook: usePrepareCalls -> /api/wallet-prepare-calls
+                      // =====================================================
                       await prepareCalls({
+                        // Session details from previous authorization step
                         sessionId: authorizationResult.sessionId,
                         signature: authorizationResult.signature,
                         accountAddress: smartAccountResult.accountAddress,
-                        chainId: '0xaa36a7', // Ethereum Sepolia
+                        
+                        // Chain configuration 
+                        chainId: '0xaa36a7', // Ethereum Sepolia testnet
+                        
+                        // Array of calls to make - in this case just a single empty call
                         calls: [{
-                          to: '0x4Ff840AC60adbdCa20e5640fC2124F5d639Ea501', // random address
-                          value: '0x0', // Zero value for no ETH transfer - just a placeholder!
-                          data: '0x' // Empty data for simple call
+                          // Example recipient address (can be replaced with actual target)
+                          to: '0x4Ff840AC60adbdCa20e5640fC2124F5d639Ea501',
+                          
+                          // No ETH transfer in this example
+                          value: '0x0',
+                          
+                          // No calldata - just a basic transaction
+                          data: '0x'
                         }]
                       });
                       markStepCompleted(5);
@@ -1043,7 +1106,7 @@ export default function Home() {
         <div className="flex min-h-screen">
           {/* Left Sidebar */}
           <div className="w-64 bg-gray-50 border-r border-gray-200 p-6">
-            <div className="sticky top-6">
+            <div className="sticky top-6 flex flex-col h-[calc(100vh-3rem)]">
               <div className="mb-6">
                 <div className="flex items-center justify-between mb-3">
                   <h3 className="font-semibold text-gray-900">Welcome</h3>
@@ -1075,6 +1138,56 @@ export default function Home() {
                       Execute transactions with session keys
                     </li>
                   </ul>
+                </div>
+              </div>
+              
+              {/* Footer Links */}
+              <div className="mt-auto pt-6 border-t border-gray-200">
+                <div className="space-y-2">
+                  <a 
+                    href="https://github.com/alchemyplatform/wallet-session-key-app" 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-2 text-sm text-gray-600 hover:text-gray-900 transition-colors"
+                  >
+                    <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M10 0C4.477 0 0 4.484 0 10.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0110 4.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.203 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.942.359.31.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0020 10.017C20 4.484 15.522 0 10 0z" clipRule="evenodd" />
+                    </svg>
+                    GitHub Repository
+                  </a>
+                  <a 
+                    href="https://www.alchemy.com/docs/wallets" 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-2 text-sm text-gray-600 hover:text-gray-900 transition-colors"
+                  >
+                    <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                      <path d="M9 2a1 1 0 000 2h2a1 1 0 100-2H9z" />
+                      <path fillRule="evenodd" d="M4 5a2 2 0 012-2 3 3 0 003 3h2a3 3 0 003-3 2 2 0 012 2v11a2 2 0 01-2 2H6a2 2 0 01-2-2V5zm3 4a1 1 0 000 2h.01a1 1 0 100-2H7zm3 0a1 1 0 000 2h3a1 1 0 100-2h-3zm-3 4a1 1 0 100 2h.01a1 1 0 100-2H7zm3 0a1 1 0 100 2h3a1 1 0 100-2h-3z" clipRule="evenodd" />
+                    </svg>
+                    Alchemy Docs
+                  </a>
+                  <a 
+                    href="https://sandbox.alchemy.com" 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-2 text-sm text-gray-600 hover:text-gray-900 transition-colors"
+                  >
+                    <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M4 2a2 2 0 00-2 2v11a2 2 0 002 2h12a2 2 0 002-2V4a2 2 0 00-2-2H4zm3 2h10a1 1 0 011 1v9a1 1 0 01-1 1H7V4z" clipRule="evenodd" />
+                    </svg>
+                    Alchemy Sandbox
+                  </a>
+                  <a 
+                    href="mailto:al@alchemy.com" 
+                    className="flex items-center gap-2 text-sm text-gray-600 hover:text-gray-900 transition-colors"
+                  >
+                    <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                      <path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884z" />
+                      <path d="M18 8.118l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.118z" />
+                    </svg>
+                    Questions? al@alchemy.com
+                  </a>
                 </div>
               </div>
             </div>
